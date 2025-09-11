@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class AdminOrderController extends Controller
 {
     /**
-     * Get all orders for admin
+     * Display a listing of orders
      */
     public function index(Request $request)
     {
@@ -51,15 +51,6 @@ class AdminOrderController extends Controller
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
-        // Amount range filter
-        if ($request->filled('min_amount')) {
-            $query->where('total_amount', '>=', $request->min_amount);
-        }
-
-        if ($request->filled('max_amount')) {
-            $query->where('total_amount', '<=', $request->max_amount);
-        }
-
         // Sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
@@ -89,7 +80,7 @@ class AdminOrderController extends Controller
     }
 
     /**
-     * Get single order details
+     * Display the specified order
      */
     public function show($id)
     {
@@ -113,7 +104,7 @@ class AdminOrderController extends Controller
     /**
      * Update order status
      */
-    public function updateStatus(Request $request, $id)
+    public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
@@ -145,7 +136,7 @@ class AdminOrderController extends Controller
             // Handle status-specific logic
             if ($data['status'] === 'shipped' && $oldStatus !== 'shipped') {
                 $data['shipped_at'] = now();
-                if (!$order->payment_status === 'paid') {
+                if ($order->payment_status !== 'paid') {
                     $data['payment_status'] = 'paid';
                 }
             }
@@ -155,7 +146,7 @@ class AdminOrderController extends Controller
                 if (!$order->shipped_at) {
                     $data['shipped_at'] = now();
                 }
-                if (!$order->payment_status === 'paid') {
+                if ($order->payment_status !== 'paid') {
                     $data['payment_status'] = 'paid';
                 }
             }
@@ -196,6 +187,50 @@ class AdminOrderController extends Controller
     }
 
     /**
+     * Remove the specified order
+     */
+    public function destroy($id)
+    {
+        $order = Order::find($id);
+
+        if (!$order) {
+            return response()->json([
+                'message' => 'Order not found'
+            ], 404);
+        }
+
+        // Only allow deletion of cancelled orders
+        if ($order->status !== 'cancelled') {
+            return response()->json([
+                'message' => 'Only cancelled orders can be deleted'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Delete order items first
+            $order->items()->delete();
+            
+            // Delete the order
+            $order->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Order deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to delete order',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
      * Admin dashboard analytics
      */
     public function dashboard(Request $request)
@@ -208,13 +243,14 @@ class AdminOrderController extends Controller
             'total_orders' => Order::count(),
             'total_revenue' => Order::where('payment_status', 'paid')->sum('total_amount'),
             'average_order_value' => Order::where('payment_status', 'paid')->avg('total_amount'),
-            'total_customers' => User::customer()->count(),
+            'total_customers' => User::where('role', 'customer')->count(),
 
             // Period stats
             'period_orders' => Order::where('created_at', '>=', $startDate)->count(),
             'period_revenue' => Order::where('created_at', '>=', $startDate)
                 ->where('payment_status', 'paid')->sum('total_amount'),
-            'period_customers' => User::customer()->where('created_at', '>=', $startDate)->count(),
+            'period_customers' => User::where('role', 'customer')
+                ->where('created_at', '>=', $startDate)->count(),
 
             // Status breakdown
             'orders_by_status' => Order::selectRaw('status, COUNT(*) as count')
@@ -233,15 +269,6 @@ class AdminOrderController extends Controller
                 ->limit(10)
                 ->get(),
 
-            // Top customers
-            'top_customers' => User::customer()
-                ->withSum(['orders as total_spent' => function($query) {
-                    $query->where('payment_status', 'paid');
-                }], 'total_amount')
-                ->orderBy('total_spent', 'desc')
-                ->limit(10)
-                ->get(['id', 'name', 'email']),
-
             // Daily revenue (last 30 days)
             'daily_revenue' => Order::selectRaw('DATE(created_at) as date, SUM(total_amount) as revenue')
                 ->where('created_at', '>=', now()->subDays(30))
@@ -252,80 +279,5 @@ class AdminOrderController extends Controller
         ];
 
         return response()->json($dashboard);
-    }
-
-    /**
-     * Sales analytics
-     */
-    public function salesAnalytics(Request $request)
-    {
-        $period = $request->get('period', '30');
-        $groupBy = $request->get('group_by', 'day'); // day, week, month
-        $startDate = now()->subDays($period);
-
-        // Determine date format based on grouping
-        $dateFormat = match($groupBy) {
-            'week' => '%Y-%u',
-            'month' => '%Y-%m',
-            default => '%Y-%m-%d',
-        };
-
-        $analytics = [
-            'sales_over_time' => Order::selectRaw("DATE_FORMAT(created_at, '{$dateFormat}') as period, 
-                                                  COUNT(*) as orders, 
-                                                  SUM(total_amount) as revenue")
-                ->where('created_at', '>=', $startDate)
-                ->where('payment_status', 'paid')
-                ->groupBy('period')
-                ->orderBy('period')
-                ->get(),
-
-            'sales_by_method' => Order::selectRaw('payment_method, COUNT(*) as orders, SUM(total_amount) as revenue')
-                ->where('created_at', '>=', $startDate)
-                ->where('payment_status', 'paid')
-                ->whereNotNull('payment_method')
-                ->groupBy('payment_method')
-                ->get(),
-
-            'conversion_funnel' => [
-                'visitors' => rand(1000, 5000), // This would come from analytics service
-                'cart_additions' => Order::where('created_at', '>=', $startDate)->count() * 1.5,
-                'checkouts_started' => Order::where('created_at', '>=', $startDate)->count() * 1.2,
-                'orders_completed' => Order::where('created_at', '>=', $startDate)
-                    ->where('payment_status', 'paid')->count(),
-            ],
-
-            'average_metrics' => [
-                'order_value' => Order::where('created_at', '>=', $startDate)
-                    ->where('payment_status', 'paid')->avg('total_amount'),
-                'items_per_order' => Order::where('created_at', '>=', $startDate)
-                    ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-                    ->groupBy('orders.id')
-                    ->selectRaw('AVG(order_items.quantity)')
-                    ->value('AVG(order_items.quantity)'),
-                'days_to_delivery' => Order::whereNotNull('delivered_at')
-                    ->where('created_at', '>=', $startDate)
-                    ->selectRaw('AVG(DATEDIFF(delivered_at, created_at))')
-                    ->value('AVG(DATEDIFF(delivered_at, created_at))'),
-            ],
-
-            'return_rate' => [
-                'total_orders' => Order::where('created_at', '>=', $startDate)
-                    ->where('payment_status', 'paid')->count(),
-                'cancelled_orders' => Order::where('created_at', '>=', $startDate)
-                    ->where('status', 'cancelled')->count(),
-            ]
-        ];
-
-        // Calculate return rate percentage
-        if ($analytics['return_rate']['total_orders'] > 0) {
-            $analytics['return_rate']['rate'] = round(
-                ($analytics['return_rate']['cancelled_orders'] / $analytics['return_rate']['total_orders']) * 100, 2
-            );
-        } else {
-            $analytics['return_rate']['rate'] = 0;
-        }
-
-        return response()->json($analytics);
     }
 }

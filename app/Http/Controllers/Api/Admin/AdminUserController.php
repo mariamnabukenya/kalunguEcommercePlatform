@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class AdminUserController extends Controller
 {
     /**
-     * Get all users for admin
+     * Display a listing of users
      */
     public function index(Request $request)
     {
@@ -55,15 +55,6 @@ class AdminUserController extends Controller
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
-        // Spending filter
-        if ($request->filled('min_spent')) {
-            $query->having('total_spent', '>=', $request->min_spent);
-        }
-
-        if ($request->filled('max_spent')) {
-            $query->having('total_spent', '<=', $request->max_spent);
-        }
-
         // Sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
@@ -85,21 +76,73 @@ class AdminUserController extends Controller
                 'total' => $users->total(),
             ],
             'filters' => [
-                'roles' => ['customer', 'admin'],
+                'roles' => ['customer', 'admin', 'super_admin'],
                 'statuses' => ['active', 'inactive'],
             ],
             'summary' => [
                 'total_users' => User::count(),
-                'total_customers' => User::customer()->count(),
-                'total_admins' => User::admin()->count(),
-                'active_users' => User::active()->count(),
+                'total_customers' => User::where('role', 'customer')->count(),
+                'total_admins' => User::where('role', 'admin')->count(),
+                'total_super_admins' => User::where('role', 'super_admin')->count(),
+                'active_users' => User::where('is_active', true)->count(),
                 'new_users_this_month' => User::where('created_at', '>=', now()->startOfMonth())->count(),
             ]
         ]);
     }
 
     /**
-     * Get single user details
+     * Store a newly created user
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|in:customer,admin,super_admin',
+            'phone' => 'nullable|string|max:20',
+            'date_of_birth' => 'nullable|date|before:today',
+            'gender' => 'nullable|in:male,female,other',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Check if current user can create this role
+        $currentUser = $request->user();
+        $requestedRole = $request->role;
+
+        if ($requestedRole === 'super_admin' && !$currentUser->isSuperAdmin()) {
+            return response()->json([
+                'message' => 'Only Super Admins can create Super Admin accounts'
+            ], 403);
+        }
+
+        if ($requestedRole === 'admin' && !$currentUser->hasAdminAccess()) {
+            return response()->json([
+                'message' => 'Insufficient privileges to create admin accounts'
+            ], 403);
+        }
+
+        $userData = $validator->validated();
+        $userData['password'] = Hash::make($userData['password']);
+        $userData['email_verified_at'] = now();
+
+        $user = User::create($userData);
+
+        return response()->json([
+            'message' => 'User created successfully',
+            'user' => $user
+        ], 201);
+    }
+
+    /**
+     * Display the specified user
      */
     public function show($id)
     {
@@ -143,12 +186,26 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Update user role
+     * Update the specified user
      */
-    public function updateRole(Request $request, $id)
+    public function update(Request $request, $id)
     {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
         $validator = Validator::make($request->all(), [
-            'role' => 'required|in:customer,admin',
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $id,
+            'role' => 'sometimes|in:customer,admin,super_admin',
+            'phone' => 'nullable|string|max:20',
+            'date_of_birth' => 'nullable|date|before:today',
+            'gender' => 'nullable|in:male,female,other',
+            'is_active' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -158,77 +215,46 @@ class AdminUserController extends Controller
             ], 422);
         }
 
-        $user = User::find($id);
+        $currentUser = $request->user();
 
-        if (!$user) {
+        // Don't allow updating your own account through this endpoint
+        if ($user->id === $currentUser->id) {
             return response()->json([
-                'message' => 'User not found'
-            ], 404);
-        }
-
-        // Don't allow changing your own role
-        if ($user->id === auth()->id()) {
-            return response()->json([
-                'message' => 'You cannot change your own role'
+                'message' => 'Use profile endpoint to update your own account'
             ], 422);
         }
 
-        $user->update(['role' => $request->role]);
+        // Role change validation
+        if ($request->has('role')) {
+            $newRole = $request->role;
+            
+            // Only super admins can change roles to/from super_admin
+            if (($newRole === 'super_admin' || $user->role === 'super_admin') && !$currentUser->isSuperAdmin()) {
+                return response()->json([
+                    'message' => 'Only Super Admins can manage Super Admin roles'
+                ], 403);
+            }
+
+            // Only admins and above can change admin roles
+            if (($newRole === 'admin' || $user->role === 'admin') && !$currentUser->hasAdminAccess()) {
+                return response()->json([
+                    'message' => 'Insufficient privileges to manage admin roles'
+                ], 403);
+            }
+        }
+
+        $user->update($validator->validated());
 
         return response()->json([
-            'message' => 'User role updated successfully',
+            'message' => 'User updated successfully',
             'user' => $user
         ]);
     }
 
     /**
-     * Deactivate/activate user
+     * Remove the specified user
      */
-    public function updateStatus(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'is_active' => 'required|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $user = User::find($id);
-
-        if (!$user) {
-            return response()->json([
-                'message' => 'User not found'
-            ], 404);
-        }
-
-        // Don't allow deactivating yourself
-        if ($user->id === auth()->id() && !$request->is_active) {
-            return response()->json([
-                'message' => 'You cannot deactivate your own account'
-            ], 422);
-        }
-
-        $user->update(['is_active' => $request->is_active]);
-
-        // Revoke all tokens if deactivating
-        if (!$request->is_active) {
-            $user->tokens()->delete();
-        }
-
-        return response()->json([
-            'message' => 'User status updated successfully',
-            'user' => $user
-        ]);
-    }
-
-    /**
-     * Delete user
-     */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $user = User::find($id);
 
@@ -237,12 +263,28 @@ class AdminUserController extends Controller
                 'message' => 'User not found'
             ], 404);
         }
+
+        $currentUser = $request->user();
 
         // Don't allow deleting yourself
-        if ($user->id === auth()->id()) {
+        if ($user->id === $currentUser->id) {
             return response()->json([
                 'message' => 'You cannot delete your own account'
             ], 422);
+        }
+
+        // Only super admins can delete other super admins
+        if ($user->isSuperAdmin() && !$currentUser->isSuperAdmin()) {
+            return response()->json([
+                'message' => 'Only Super Admins can delete Super Admin accounts'
+            ], 403);
+        }
+
+        // Only admins and above can delete admin accounts
+        if ($user->isAdmin() && !$currentUser->hasAdminAccess()) {
+            return response()->json([
+                'message' => 'Insufficient privileges to delete admin accounts'
+            ], 403);
         }
 
         // Check if user has orders
@@ -267,9 +309,58 @@ class AdminUserController extends Controller
     }
 
     /**
-     * User analytics
+     * Update user role (separate endpoint for better control)
      */
-    public function userAnalytics(Request $request)
+    public function updateRole(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'role' => 'required|in:customer,admin,super_admin',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $currentUser = $request->user();
+        $newRole = $request->role;
+
+        // Don't allow changing your own role
+        if ($user->id === $currentUser->id) {
+            return response()->json([
+                'message' => 'You cannot change your own role'
+            ], 422);
+        }
+
+        // Only super admins can manage super_admin roles
+        if (($newRole === 'super_admin' || $user->role === 'super_admin') && !$currentUser->isSuperAdmin()) {
+            return response()->json([
+                'message' => 'Only Super Admins can manage Super Admin roles'
+            ], 403);
+        }
+
+        $user->update(['role' => $newRole]);
+
+        return response()->json([
+            'message' => 'User role updated successfully',
+            'user' => $user
+        ]);
+    }
+
+    /**
+     * User analytics for admins
+     */
+    public function analytics(Request $request)
     {
         $period = $request->get('period', '30'); // days
         $startDate = now()->subDays($period);
@@ -284,73 +375,15 @@ class AdminUserController extends Controller
 
             // User segments
             'user_segments' => [
-                'new_users' => User::where('created_at', '>=', now()->subDays(30))->count(),
-                'returning_customers' => User::whereHas('orders', function($q) {
-                    $q->where('created_at', '>=', now()->subDays(30));
-                })->whereHas('orders', function($q) {
-                    $q->where('created_at', '<', now()->subDays(30));
-                })->count(),
-                'vip_customers' => User::withSum(['orders as total_spent' => function($q) {
-                    $q->where('payment_status', 'paid');
-                }], 'total_amount')
-                ->having('total_spent', '>', 1000)
-                ->count(),
-                'inactive_users' => User::where('last_login_at', '<', now()->subDays(90))
-                    ->orWhereNull('last_login_at')
-                    ->count(),
+                'customers' => User::where('role', 'customer')->count(),
+                'admins' => User::where('role', 'admin')->count(),
+                'super_admins' => User::where('role', 'super_admin')->count(),
+                'active_users' => User::where('is_active', true)->count(),
+                'new_users_this_month' => User::where('created_at', '>=', now()->startOfMonth())->count(),
             ],
 
-            // Geographic distribution (mock data - in real app, this would come from user addresses)
-            'geographic_distribution' => [
-                'US' => User::whereHas('addresses', function($q) {
-                    $q->where('country', 'United States');
-                })->count(),
-                'CA' => User::whereHas('addresses', function($q) {
-                    $q->where('country', 'Canada');
-                })->count(),
-                'UK' => User::whereHas('addresses', function($q) {
-                    $q->where('country', 'United Kingdom');
-                })->count(),
-            ],
-
-            // Customer lifetime value
-            'lifetime_value' => [
-                'average_ltv' => User::customer()
-                    ->withSum(['orders as total_spent' => function($q) {
-                        $q->where('payment_status', 'paid');
-                    }], 'total_amount')
-                    ->avg('total_spent') ?? 0,
-                
-                'ltv_distribution' => [
-                    '0-100' => User::customer()
-                        ->withSum(['orders as total_spent' => function($q) {
-                            $q->where('payment_status', 'paid');
-                        }], 'total_amount')
-                        ->having('total_spent', '<=', 100)
-                        ->count(),
-                    '101-500' => User::customer()
-                        ->withSum(['orders as total_spent' => function($q) {
-                            $q->where('payment_status', 'paid');
-                        }], 'total_amount')
-                        ->havingBetween('total_spent', [101, 500])
-                        ->count(),
-                    '501-1000' => User::customer()
-                        ->withSum(['orders as total_spent' => function($q) {
-                            $q->where('payment_status', 'paid');
-                        }], 'total_amount')
-                        ->havingBetween('total_spent', [501, 1000])
-                        ->count(),
-                    '1000+' => User::customer()
-                        ->withSum(['orders as total_spent' => function($q) {
-                            $q->where('payment_status', 'paid');
-                        }], 'total_amount')
-                        ->having('total_spent', '>', 1000)
-                        ->count(),
-                ]
-            ],
-
-            // Top customers
-            'top_customers' => User::customer()
+            // Top customers by spending
+            'top_customers' => User::where('role', 'customer')
                 ->withSum(['orders as total_spent' => function($q) {
                     $q->where('payment_status', 'paid');
                 }], 'total_amount')
@@ -361,9 +394,9 @@ class AdminUserController extends Controller
 
             // Activity stats
             'activity_stats' => [
-                'daily_active' => User::where('last_login_at', '>=', now()->subDay())->count(),
-                'weekly_active' => User::where('last_login_at', '>=', now()->subWeek())->count(),
-                'monthly_active' => User::where('last_login_at', '>=', now()->subMonth())->count(),
+                'users_with_orders' => User::whereHas('orders')->count(),
+                'users_with_reviews' => User::whereHas('reviews')->count(),
+                'recently_active' => User::where('last_login_at', '>=', now()->subDays(7))->count(),
             ],
         ];
 

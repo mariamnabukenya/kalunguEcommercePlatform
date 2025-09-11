@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\SystemController;
 
 /*
 |--------------------------------------------------------------------------
@@ -98,47 +100,51 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/my-reviews', [ReviewController::class, 'userReviews']);
     });
 
-    // Admin routes
+    // Admin routes (Admin + Super Admin access)
     Route::middleware(['admin'])->prefix('admin')->group(function () {
         // Product management
-        Route::prefix('products')->group(function () {
-            Route::get('/', [AdminProductController::class, 'index']);
-            Route::post('/', [AdminProductController::class, 'store']);
-            Route::get('/{id}', [AdminProductController::class, 'show']);
-            Route::put('/{id}', [AdminProductController::class, 'update']);
-            Route::delete('/{id}', [AdminProductController::class, 'destroy']);
-            Route::post('/{id}/images', [AdminProductController::class, 'uploadImages']);
-            Route::delete('/{id}/images/{imageId}', [AdminProductController::class, 'deleteImage']);
-        });
+        Route::apiResource('products', AdminProductController::class);
+        Route::post('/products/{id}/images', [AdminProductController::class, 'uploadImages']);
+        Route::delete('/products/{id}/images/{imageId}', [AdminProductController::class, 'deleteImage']);
 
         // Category management
-        Route::prefix('categories')->group(function () {
-            Route::post('/', [CategoryController::class, 'store']);
-            Route::put('/{id}', [CategoryController::class, 'update']);
-            Route::delete('/{id}', [CategoryController::class, 'destroy']);
-        });
+        Route::post('/categories', [CategoryController::class, 'store']);
+        Route::put('/categories/{id}', [CategoryController::class, 'update']);
+        Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
         // Order management
-        Route::prefix('orders')->group(function () {
-            Route::get('/', [AdminOrderController::class, 'index']);
-            Route::get('/{id}', [AdminOrderController::class, 'show']);
-            Route::put('/{id}/status', [AdminOrderController::class, 'updateStatus']);
-            Route::get('/analytics/dashboard', [AdminOrderController::class, 'dashboard']);
-        });
+        Route::apiResource('orders', AdminOrderController::class);
+        Route::get('/dashboard', [AdminOrderController::class, 'dashboard']);
 
         // User management
-        Route::prefix('users')->group(function () {
-            Route::get('/', [AdminUserController::class, 'index']);
-            Route::get('/{id}', [AdminUserController::class, 'show']);
-            Route::put('/{id}/role', [AdminUserController::class, 'updateRole']);
-            Route::delete('/{id}', [AdminUserController::class, 'destroy']);
+        Route::apiResource('users', AdminUserController::class);
+        Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']);
+        Route::get('/users/analytics', [AdminUserController::class, 'analytics']);
+    });
+
+    // Super Admin only routes
+    Route::middleware(['super.admin'])->prefix('super-admin')->group(function () {
+        // Advanced Reports
+        Route::prefix('reports')->group(function () {
+            Route::get('/sales', [ReportController::class, 'salesReport']);
+            Route::get('/users', [ReportController::class, 'userReport']);
+            Route::get('/products', [ReportController::class, 'productReport']);
+            Route::get('/analytics', [ReportController::class, 'analyticsReport']);
         });
 
-        // Analytics
-        Route::prefix('analytics')->group(function () {
-            Route::get('/sales', [AdminOrderController::class, 'salesAnalytics']);
-            Route::get('/products', [AdminProductController::class, 'productAnalytics']);
-            Route::get('/users', [AdminUserController::class, 'userAnalytics']);
+        // System Management
+        Route::prefix('system')->group(function () {
+            Route::get('/settings', [SystemController::class, 'settings']);
+            Route::put('/settings', [SystemController::class, 'updateSettings']);
+            Route::post('/cache/clear', [SystemController::class, 'clearCache']);
+            Route::get('/health', [SystemController::class, 'healthCheck']);
+            Route::get('/logs', [SystemController::class, 'getLogs']);
+            Route::post('/backup', [SystemController::class, 'backupDatabase']);
+            Route::post('/maintenance', [SystemController::class, 'maintenance']);
         });
+
+        // Advanced User Management (Super Admin can manage admin roles)
+        Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']);
+        Route::post('/users', [AdminUserController::class, 'store']);
     });
 });
