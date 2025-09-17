@@ -21,13 +21,16 @@ class UserController extends Controller
         ]);
 
         return response()->json([
-            'user' => $user,
-            'stats' => [
-                'total_orders' => $user->orders()->count(),
-                'total_spent' => $user->orders()->where('payment_status', 'paid')->sum('total_amount'),
-                'total_reviews' => $user->reviews()->count(),
-                'wishlist_count' => $user->wishlistItems()->count(),
-                'cart_count' => $user->getCartItemsCount(),
+            'success' => true,
+            'data' => [
+                'user' => $user,
+                'stats' => [
+                    'total_orders' => $user->orders()->count(),
+                    'total_spent' => $user->orders()->where('payment_status', 'paid')->sum('total_amount'),
+                    'total_reviews' => $user->reviews()->count(),
+                    'wishlist_count' => $user->wishlistItems()->count(),
+                    'cart_count' => $user->getCartItemsCount(),
+                ]
             ]
         ]);
     }

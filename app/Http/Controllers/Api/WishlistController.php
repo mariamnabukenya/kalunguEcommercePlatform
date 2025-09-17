@@ -24,12 +24,15 @@ class WishlistController extends Controller
             ->paginate(12);
 
         return response()->json([
-            'wishlist_items' => $wishlistItems->items(),
-            'pagination' => [
-                'current_page' => $wishlistItems->currentPage(),
-                'last_page' => $wishlistItems->lastPage(),
-                'per_page' => $wishlistItems->perPage(),
-                'total' => $wishlistItems->total(),
+            'success' => true,
+            'data' => [
+                'wishlist_items' => $wishlistItems->items(),
+                'pagination' => [
+                    'current_page' => $wishlistItems->currentPage(),
+                    'last_page' => $wishlistItems->lastPage(),
+                    'per_page' => $wishlistItems->perPage(),
+                    'total' => $wishlistItems->total(),
+                ]
             ]
         ]);
     }

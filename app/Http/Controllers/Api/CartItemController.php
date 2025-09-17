@@ -38,13 +38,16 @@ class CartItemController extends Controller
         $totalItems = $cartItems->sum('quantity');
 
         return response()->json([
-            'cart_items' => $cartItems,
-            'totals' => [
-                'subtotal' => $total,
-                'total_items' => $totalItems,
-                'tax_estimate' => $total * 0.1, // 10% tax
-                'shipping_estimate' => $total > 100 ? 0 : 10, // Free shipping over $100
-                'total_estimate' => $total + ($total * 0.1) + ($total > 100 ? 0 : 10),
+            'success' => true,
+            'data' => [
+                'cart_items' => $cartItems,
+                'totals' => [
+                    'subtotal' => $total,
+                    'total_items' => $totalItems,
+                    'tax_estimate' => $total * 0.1, // 10% tax
+                    'shipping_estimate' => $total > 100 ? 0 : 10, // Free shipping over $100
+                    'total_estimate' => $total + ($total * 0.1) + ($total > 100 ? 0 : 10),
+                ]
             ]
         ]);
     }
@@ -52,7 +55,7 @@ class CartItemController extends Controller
     /**
      * Add item to cart
      */
-    public function add(Request $request)
+    public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|exists:products,id',
