@@ -5,119 +5,96 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
     /**
-     * Get all categories with hierarchy
+     * Get all active categories with optional hierarchy
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $query = Category::with(['children' => fn($q) => $q->active()->orderBy('sort_order')])
-            ->active()
-            ->root()
-            ->orderBy('sort_order');
+        $categories = Category::active()
+            ->with(['parent', 'children'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
 
-        if ($request->boolean('with_products')) {
-            $query->withCount('activeProducts');
+        // If flat structure is requested
+        if ($request->boolean('flat')) {
+            return response()->json([
+                'categories' => $categories
+            ]);
         }
 
+        // Return hierarchical structure
+        $rootCategories = $categories->whereNull('parent_id')->values();
+        
         return response()->json([
-            'categories' => $query->get()
+            'categories' => $rootCategories
         ]);
     }
 
     /**
-     * Get single category with children
+     * Get category by slug with products
      */
-    public function show($id)
+    public function show(string $slug): JsonResponse
     {
-        $category = Category::with(['children' => fn($q) => $q->active()->orderBy('sort_order')])
+        $category = Category::with([
+                'activeProducts' => function($query) {
+                    $query->with(['images', 'variants'])
+                          ->orderBy('featured', 'desc')
+                          ->orderBy('created_at', 'desc');
+                },
+                'children.activeProducts'
+            ])
+            ->where('slug', $slug)
             ->active()
-            ->find($id);
+            ->first();
 
         if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
+            return response()->json([
+                'message' => 'Category not found'
+            ], 404);
         }
-
-        return response()->json(['category' => $category]);
-    }
-
-    /**
-     * Get products for a category
-     */
-    public function products($id, Request $request)
-    {
-        $category = Category::active()->find($id);
-
-        if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
-        }
-
-        $query = $category->activeProducts()
-            ->with(['images', 'categories'])
-            ->inStock();
-
-        // Filters
-        if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
-        }
-
-        if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
-        }
-
-        if ($request->filled('brand')) {
-            $query->where('brand', $request->brand);
-        }
-
-        // Sorting
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        switch ($sortBy) {
-            case 'name':
-                $query->orderBy('name', $sortOrder);
-                break;
-            case 'price':
-                $query->orderBy('price', $sortOrder);
-                break;
-            case 'rating':
-                $query->orderBy('average_rating', $sortOrder);
-                break;
-            default:
-                $query->orderBy('created_at', $sortOrder);
-        }
-
-        $perPage = min($request->get('per_page', 12), 50);
-        $products = $query->paginate($perPage);
 
         return response()->json([
             'category' => $category,
-            'products' => $products->items(),
-            'pagination' => [
-                'current_page' => $products->currentPage(),
-                'last_page' => $products->lastPage(),
-                'per_page' => $products->perPage(),
-                'total' => $products->total(),
-            ]
+            'products' => $category->activeProducts
         ]);
     }
 
     /**
-     * Create new category (Admin only)
+     * Get featured categories
      */
-    public function store(Request $request)
+    public function featured(): JsonResponse
+    {
+        $categories = Category::active()
+            ->whereHas('products')
+            ->orderBy('sort_order')
+            ->limit(6)
+            ->get();
+
+        return response()->json([
+            'categories' => $categories
+        ]);
+    }
+
+    /**
+     * Admin: Create a new category
+     */
+    public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:categories',
+            'slug' => 'nullable|string|max:255|unique:categories',
             'description' => 'nullable|string',
+            'image' => 'nullable|string|max:255',
             'parent_id' => 'nullable|exists:categories,id',
-            'image' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
+            'meta_data' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -128,14 +105,10 @@ class CategoryController extends Controller
         }
 
         $data = $validator->validated();
-        $data['slug'] = Str::slug($data['name']);
-
-        // Ensure unique slug
-        $originalSlug = $data['slug'];
-        $counter = 1;
-        while (Category::where('slug', $data['slug'])->exists()) {
-            $data['slug'] = $originalSlug . '-' . $counter;
-            $counter++;
+        
+        // Generate slug if not provided
+        if (empty($data['slug'])) {
+            $data['slug'] = \Str::slug($data['name']);
         }
 
         $category = Category::create($data);
@@ -147,23 +120,19 @@ class CategoryController extends Controller
     }
 
     /**
-     * Update category (Admin only)
+     * Admin: Update a category
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Category $category): JsonResponse
     {
-        $category = Category::find($id);
-
-        if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
-        }
-
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255|unique:categories,name,' . $category->id,
+            'slug' => 'sometimes|string|max:255|unique:categories,slug,' . $category->id,
             'description' => 'nullable|string',
-            'parent_id' => 'nullable|exists:categories,id|not_in:' . $id,
-            'image' => 'nullable|string',
+            'image' => 'nullable|string|max:255',
+            'parent_id' => 'nullable|exists:categories,id',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
+            'meta_data' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -175,51 +144,44 @@ class CategoryController extends Controller
 
         $data = $validator->validated();
 
-        // If name changed, regenerate slug
-        if (isset($data['name']) && $data['name'] !== $category->name) {
-            $data['slug'] = Str::slug($data['name']);
-
-            $originalSlug = $data['slug'];
-            $counter = 1;
-            while (Category::where('slug', $data['slug'])->where('id', '!=', $id)->exists()) {
-                $data['slug'] = $originalSlug . '-' . $counter;
-                $counter++;
-            }
+        // Prevent setting parent to itself or creating circular references
+        if (isset($data['parent_id']) && $data['parent_id'] === $category->id) {
+            return response()->json([
+                'message' => 'A category cannot be its own parent'
+            ], 422);
         }
 
         $category->update($data);
 
         return response()->json([
             'message' => 'Category updated successfully',
-            'category' => $category
+            'category' => $category->fresh()
         ]);
     }
 
     /**
-     * Delete category (Admin only)
+     * Admin: Delete a category
      */
-    public function destroy($id)
+    public function destroy(Category $category): JsonResponse
     {
-        $category = Category::find($id);
-
-        if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
-        }
-
+        // Check if category has products
         if ($category->products()->count() > 0) {
             return response()->json([
-                'message' => 'Cannot delete category that has products. Please move or delete products first.'
-            ], 422);
+                'message' => 'Cannot delete category with products'
+            ], 409);
         }
 
+        // Check if category has children
         if ($category->children()->count() > 0) {
             return response()->json([
-                'message' => 'Cannot delete category that has subcategories. Please delete subcategories first.'
-            ], 422);
+                'message' => 'Cannot delete category with subcategories'
+            ], 409);
         }
 
         $category->delete();
 
-        return response()->json(['message' => 'Category deleted successfully']);
+        return response()->json([
+            'message' => 'Category deleted successfully'
+        ]);
     }
 }

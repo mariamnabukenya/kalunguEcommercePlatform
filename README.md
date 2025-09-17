@@ -1,61 +1,269 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# KalunguBrand Ecommerce Website
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A modern full-stack ecommerce application built with Laravel (backend API) and React (frontend) for a clothing brand.
 
-## About Laravel
+## 🚀 Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Backend (Laravel API)
+- **Authentication & Authorization**: User registration, login with Laravel Sanctum
+- **Product Management**: Complete product catalog with categories, variants, and images
+- **Shopping Cart**: Add/remove items, quantity management
+- **Order Management**: Complete checkout process, order history
+- **Wishlist**: Save favorite products
+- **Reviews & Ratings**: Product reviews and ratings system
+- **Admin Panel**: Admin dashboard for managing products, orders, and users
+- **RESTful API**: Comprehensive API endpoints for all functionality
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Frontend (React)
+- **Modern React**: Built with React 18, TypeScript, and Vite
+- **Responsive Design**: Mobile-first design with Tailwind CSS
+- **State Management**: Context API and TanStack Query for server state
+- **Authentication**: Secure login/register with JWT tokens
+- **Product Catalog**: Advanced filtering, search, and pagination
+- **Shopping Experience**: Smooth cart management and checkout flow
+- **User Dashboard**: Profile management, order history, wishlist
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🛠 Tech Stack
 
-## Learning Laravel
+### Backend
+- **Laravel 12** - PHP framework
+- **Laravel Sanctum** - API authentication
+- **SQLite/MySQL** - Database
+- **Eloquent ORM** - Database interactions
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Frontend
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **Tailwind CSS** - Styling
+- **React Router** - Navigation
+- **TanStack Query** - Server state management
+- **React Hook Form** - Form handling
+- **Axios** - HTTP client
+- **Heroicons** - Icons
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 📦 Installation
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Prerequisites
+- PHP 8.2+
+- Composer
+- Node.js 18+
+- npm/yarn
 
-## Laravel Sponsors
+### Backend Setup
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+1. **Clone and install dependencies**
+   ```bash
+   cd kalungusite
+   composer install
+   ```
 
-### Premium Partners
+2. **Environment Configuration**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+3. **Database Setup**
+   ```bash
+   # For SQLite (default)
+   touch database/database.sqlite
+   
+   # Or configure MySQL in .env file
+   # DB_CONNECTION=mysql
+   # DB_HOST=127.0.0.1
+   # DB_PORT=3306
+   # DB_DATABASE=kalungusite
+   # DB_USERNAME=root
+   # DB_PASSWORD=
+   ```
 
-## Contributing
+4. **Run Migrations and Seeders**
+   ```bash
+   php artisan migrate:fresh --seed
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+5. **Start Laravel Server**
+   ```bash
+   php artisan serve
+   # Server will run on http://localhost:8000
+   ```
 
-## Code of Conduct
+### Frontend Setup
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. **Navigate to frontend directory**
+   ```bash
+   cd frontend
+   ```
 
-## Security Vulnerabilities
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+3. **Environment Configuration**
+   ```bash
+   cp .env.example .env
+   # Update VITE_API_URL if needed (default: http://localhost:8000/api)
+   ```
 
-## License
+4. **Start Development Server**
+   ```bash
+   npm run dev
+   # Server will run on http://localhost:5173
+   ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 🔧 API Endpoints
+
+### Authentication
+```
+POST /api/auth/register     # User registration
+POST /api/auth/login        # User login
+POST /api/auth/logout       # User logout (requires auth)
+GET  /api/auth/profile      # Get user profile (requires auth)
+PUT  /api/auth/profile      # Update user profile (requires auth)
+```
+
+### Products
+```
+GET  /api/products          # Get products with filtering
+GET  /api/products/featured # Get featured products
+GET  /api/products/search   # Search products
+GET  /api/products/{id}     # Get single product
+```
+
+### Categories
+```
+GET  /api/categories        # Get all categories
+GET  /api/categories/{slug} # Get category with products
+```
+
+### Cart (Authentication Required)
+```
+GET    /api/cart           # Get cart items
+POST   /api/cart/add       # Add item to cart
+PUT    /api/cart/{id}      # Update cart item
+DELETE /api/cart/{id}      # Remove cart item
+```
+
+### Orders (Authentication Required)
+```
+GET  /api/orders           # Get user orders
+POST /api/orders           # Create new order
+GET  /api/orders/{id}      # Get single order
+```
+
+### Wishlist (Authentication Required)
+```
+GET    /api/wishlist                    # Get wishlist items
+POST   /api/wishlist/add/{productId}    # Add to wishlist
+DELETE /api/wishlist/remove/{productId} # Remove from wishlist
+```
+
+## 👥 User Accounts
+
+### Default Test Accounts
+```
+Super Admin:
+- Email: superadmin@example.com
+- Password: password123
+
+Admin:
+- Email: admin@example.com
+- Password: password123
+
+Customer:
+- Email: customer@example.com
+- Password: password123
+```
+
+## 📱 Frontend Routes
+
+```
+/                    # Homepage
+/products            # Product catalog
+/products/:id        # Product details
+/cart               # Shopping cart
+/checkout           # Checkout (auth required)
+/login              # Login page
+/register           # Registration page
+/profile            # User profile (auth required)
+/orders             # Order history (auth required)
+/wishlist           # Wishlist (auth required)
+```
+
+## 🎨 Customization
+
+### Styling
+- Modify `frontend/src/index.css` for global styles
+- Update `frontend/tailwind.config.js` for theme customization
+- Colors and branding can be changed in the Tailwind config
+
+### API Configuration
+- Backend API routes are defined in `routes/api.php`
+- Frontend API client is in `frontend/src/services/api.ts`
+- Environment variables control API URLs and settings
+
+## 🚀 Deployment
+
+### Backend (Laravel)
+1. Configure production environment variables
+2. Set up database and run migrations
+3. Configure web server (Apache/Nginx)
+4. Set appropriate file permissions
+
+### Frontend (React)
+1. Build for production: `npm run build`
+2. Deploy `dist/` folder to web server
+3. Configure environment variables for production API
+
+## 🔐 Security Features
+
+- **CSRF Protection**: Laravel CSRF tokens
+- **API Authentication**: Laravel Sanctum tokens
+- **Password Hashing**: Bcrypt password hashing
+- **CORS Configuration**: Proper cross-origin setup
+- **Input Validation**: Comprehensive request validation
+- **SQL Injection Prevention**: Eloquent ORM protection
+
+## 🧪 Testing
+
+### Backend Testing
+```bash
+# Run PHP tests
+php artisan test
+```
+
+### Frontend Testing
+```bash
+# Run frontend tests (when implemented)
+npm run test
+```
+
+## 📈 Performance Optimizations
+
+- **Database Indexing**: Proper indexes on frequently queried columns
+- **Query Optimization**: Efficient Eloquent queries with eager loading
+- **Caching**: API response caching and query optimization
+- **Image Optimization**: Responsive images and lazy loading
+- **Code Splitting**: React lazy loading for optimal bundle sizes
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](LICENSE).
+
+## 📞 Support
+
+For support or questions, please contact the development team or create an issue in the repository.
+
+---
+
+**KalunguBrand** - Premium clothing for the modern individual. 🛍️
