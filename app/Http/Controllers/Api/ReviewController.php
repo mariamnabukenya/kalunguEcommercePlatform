@@ -64,17 +64,20 @@ class ReviewController extends Controller
         }
 
         return response()->json([
-            'reviews' => $reviews->items(),
-            'pagination' => [
-                'current_page' => $reviews->currentPage(),
-                'last_page' => $reviews->lastPage(),
-                'per_page' => $reviews->perPage(),
-                'total' => $reviews->total(),
-            ],
-            'rating_summary' => [
-                'average_rating' => $product->average_rating,
-                'total_reviews' => $product->review_count,
-                'rating_distribution' => $ratingDistribution,
+            'success' => true,
+            'data' => [
+                'reviews' => $reviews->items(),
+                'pagination' => [
+                    'current_page' => $reviews->currentPage(),
+                    'last_page' => $reviews->lastPage(),
+                    'per_page' => $reviews->perPage(),
+                    'total' => $reviews->total(),
+                ],
+                'rating_summary' => [
+                    'average_rating' => $product->average_rating,
+                    'total_reviews' => $product->review_count,
+                    'rating_distribution' => $ratingDistribution,
+                ]
             ]
         ]);
     }

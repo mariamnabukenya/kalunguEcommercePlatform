@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Controllers
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\WishlistController;
@@ -11,16 +12,27 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\CartItemController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
 | Public Routes
 |--------------------------------------------------------------------------
 */
+
+// Authentication routes
+Route::post('auth/register', [AuthController::class, 'register']);
+Route::post('auth/login', [AuthController::class, 'login']);
+
+// Public product routes
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/featured', [ProductController::class, 'featured']);
 Route::get('products/search', [ProductController::class, 'search']);
 Route::get('products/{id}', [ProductController::class, 'show']);
+
+// Categories
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('categories/{id}', [CategoryController::class, 'show']);
 
 // Reviews for products
 Route::get('products/{productId}/reviews', [ReviewController::class, 'productReviews']);
@@ -31,6 +43,12 @@ Route::get('products/{productId}/reviews', [ReviewController::class, 'productRev
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Authentication
+    Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::get('auth/me', [AuthController::class, 'me']);
+    Route::post('auth/refresh', [AuthController::class, 'refresh']);
+    Route::post('auth/change-password', [AuthController::class, 'changePassword']);
 
     // User Profile
     Route::get('user/profile', [UserController::class, 'profile']);
