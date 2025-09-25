@@ -1,61 +1,187 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Kalungu Clothing - React Frontend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A modern, responsive React frontend for the Kalungu Clothing ecommerce platform. Built with TypeScript, Tailwind CSS, and React Query for optimal performance and user experience.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 🛍️ Ecommerce Functionality
+- **Product Catalog**: Browse products with advanced filtering and search
+- **Product Details**: Detailed product pages with image galleries and reviews
+- **Shopping Cart**: Add/remove items, quantity management, persistent cart
+- **Wishlist**: Save favorite products for later
+- **Checkout**: Complete order process with address and payment forms
+- **Order Management**: View order history and track order status
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 🔐 Authentication & User Management
+- **User Registration & Login**: Secure authentication with form validation
+- **Profile Management**: Update user information and preferences
+- **Protected Routes**: Secure access to user-specific features
+- **Social Login**: Google and Facebook authentication options
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🎨 Modern UI/UX
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Dark/Light Mode**: Theme switching capability
+- **Loading States**: Smooth loading indicators and skeleton screens
+- **Error Handling**: User-friendly error messages and fallbacks
+- **Accessibility**: WCAG compliant components and navigation
 
-## Learning Laravel
+### ⚡ Performance & Optimization
+- **React Query**: Efficient data fetching and caching
+- **Code Splitting**: Lazy loading for optimal bundle size
+- **Image Optimization**: Responsive images with lazy loading
+- **SEO Ready**: Meta tags and structured data
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Tech Stack
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, PostCSS
+- **State Management**: React Context API, React Query
+- **Routing**: React Router v6
+- **Forms**: React Hook Form
+- **Icons**: Lucide React
+- **Notifications**: React Hot Toast
+- **HTTP Client**: Axios
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Getting Started
 
-## Laravel Sponsors
+### Prerequisites
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Node.js 16+ 
+- npm or yarn
+- Laravel backend API running on `http://localhost:8000`
 
-### Premium Partners
+### Installation
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd kalungu-clothing-frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open your browser**
+   Navigate to `http://localhost:3000`
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+The built files will be in the `dist` directory.
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── Button.tsx
+│   ├── Input.tsx
+│   ├── ProductCard.tsx
+│   ├── Header.tsx
+│   ├── Footer.tsx
+│   └── ...
+├── contexts/           # React Context providers
+│   ├── AuthContext.tsx
+│   ├── CartContext.tsx
+│   └── WishlistContext.tsx
+├── lib/               # Utility functions and API service
+│   ├── api.ts
+│   └── utils.ts
+├── pages/             # Page components
+│   ├── Home.tsx
+│   ├── Products.tsx
+│   ├── ProductDetail.tsx
+│   ├── Cart.tsx
+│   ├── Checkout.tsx
+│   ├── Login.tsx
+│   ├── Register.tsx
+│   ├── Profile.tsx
+│   ├── Orders.tsx
+│   ├── OrderDetail.tsx
+│   ├── Wishlist.tsx
+│   └── NotFound.tsx
+├── types/             # TypeScript type definitions
+│   └── index.ts
+├── App.tsx            # Main app component
+├── main.tsx           # App entry point
+└── index.css          # Global styles
+```
+
+## API Integration
+
+The frontend communicates with the Laravel backend API through the `apiService` in `src/lib/api.ts`. All API endpoints are configured to work with the Laravel Sanctum authentication system.
+
+### Key API Features:
+- **Authentication**: Login, register, logout with token management
+- **Products**: CRUD operations, search, filtering, featured products
+- **Cart**: Add/remove items, quantity updates, cart persistence
+- **Wishlist**: Add/remove items, move to cart functionality
+- **Orders**: Create orders, view order history, order tracking
+- **Reviews**: Product reviews and ratings
+- **User Management**: Profile updates, address management
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+VITE_APP_NAME=Kalungu Clothing
+```
+
+### Tailwind Configuration
+
+The project uses a custom Tailwind configuration with:
+- Custom color palette (primary, secondary)
+- Extended animations and keyframes
+- Custom utility classes for buttons, inputs, and cards
+
+## Features in Detail
+
+### Product Catalog
+- **Advanced Filtering**: Category, brand, price range, availability
+- **Search**: Real-time product search with debouncing
+- **Sorting**: Multiple sort options (price, name, rating, date)
+- **Pagination**: Efficient data loading with pagination
+- **Responsive Grid**: Adaptive layout for different screen sizes
+
+### Shopping Experience
+- **Cart Management**: Persistent cart across sessions
+- **Wishlist**: Save products for later purchase
+- **Quick Actions**: Add to cart, wishlist from product cards
+- **Stock Management**: Real-time stock status and availability
+
+### User Experience
+- **Responsive Design**: Mobile-first approach
+- **Loading States**: Skeleton screens and loading indicators
+- **Error Handling**: Graceful error handling with user feedback
+- **Form Validation**: Real-time validation with helpful messages
+- **Accessibility**: Keyboard navigation and screen reader support
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For support, email support@kalungu.com or create an issue in the repository.
