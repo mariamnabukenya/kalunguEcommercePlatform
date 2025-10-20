@@ -13,18 +13,20 @@ class Category extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'category_id';
+    public $incrementing = true;
+
     /**
      * Mass assignable attributes
      */
     protected $fillable = [
-        'name',
+        'category_name',
         'slug',
-        'description',
-        'image',
         'parent_id',
         'sort_order',
         'is_active',
         'meta_data',
+        'category_id',
     ];
 
     /**
@@ -41,7 +43,7 @@ class Category extends Model
      */
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(Category::class, 'parent_id');
+        return $this->belongsTo(Category::class, 'parent_id' , 'category_id');
     }
 
     /**
@@ -49,7 +51,7 @@ class Category extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(Category::class, 'parent_id')
+        return $this->hasMany(Category::class, 'parent_id' , 'category_id')
                     ->where('is_active', true);
     }
 
@@ -62,13 +64,12 @@ class Category extends Model
     }
 
     /**
-     * Many-to-Many: Get products in this category.
+     *  Get products in this category.
      */
-    public function products()
-    {
-        return $this->belongsToMany(Product::class, 'product_categories')
-                    ->withTimestamps();
-    }
+    public function products(): BelongsToMany
+{
+    return $this->belongsToMany(Product::class, 'product_categories', 'product_id', 'category_id');
+}
 
     /**
      * Get only active products in this category.

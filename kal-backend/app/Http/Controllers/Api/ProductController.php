@@ -19,65 +19,62 @@ class ProductController extends Controller
             ->active()
             ->inStock();
 
-        // Category filter
+        // ✅ Category filter by ID
         if ($request->filled('category_id')) {
             $query->whereHas('categories', function (Builder $q) use ($request) {
                 $q->where('categories.id', $request->category_id);
             });
         }
 
+        // ✅ Category filter by slug
         if ($request->filled('category_slug')) {
             $query->whereHas('categories', function (Builder $q) use ($request) {
                 $q->where('categories.slug', $request->category_slug);
             });
         }
 
-        // Price range filter
+        // ✅ Price range filter
         if ($request->filled('min_price')) {
             $query->where(function (Builder $q) use ($request) {
                 $q->where('sale_price', '>=', $request->min_price)
-                  ->orWhere(function (Builder $q2) use ($request) {
-                      $q2->whereNull('sale_price')
-                         ->where('price', '>=', $request->min_price);
-                  });
+                    ->orWhere(function (Builder $q2) use ($request) {
+                        $q2->whereNull('sale_price')
+                            ->where('price', '>=', $request->min_price);
+                    });
             });
         }
 
         if ($request->filled('max_price')) {
             $query->where(function (Builder $q) use ($request) {
                 $q->where('sale_price', '<=', $request->max_price)
-                  ->orWhere(function (Builder $q2) use ($request) {
-                      $q2->whereNull('sale_price')
-                         ->where('price', '<=', $request->max_price);
-                  });
+                    ->orWhere(function (Builder $q2) use ($request) {
+                        $q2->whereNull('sale_price')
+                            ->where('price', '<=', $request->max_price);
+                    });
             });
         }
 
-        // Brand filter
-        if ($request->filled('brand')) {
-            $query->where('brand', $request->brand);
-        }
 
-        // Size filter (variants JSON attributes)
+        // ✅ Size filter (variant attributes)
         if ($request->filled('size')) {
             $query->whereHas('variants', function (Builder $q) use ($request) {
                 $q->whereJsonContains('attributes->size', $request->size);
             });
         }
 
-        // Color filter
+        // ✅ Color filter
         if ($request->filled('color')) {
             $query->whereHas('variants', function (Builder $q) use ($request) {
                 $q->whereJsonContains('attributes->color', $request->color);
             });
         }
 
-        // Featured filter
+        // ✅ Featured filter
         if ($request->boolean('featured')) {
             $query->featured();
         }
 
-        // Sorting
+        // ✅ Sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
 
@@ -98,8 +95,14 @@ class ProductController extends Controller
                 $query->orderBy('created_at', $sortOrder);
         }
 
-        $perPage = min($request->get('per_page', 12), 50); 
+        $perPage = min($request->get('per_page', 12), 50);
         $products = $query->paginate($perPage);
+
+        // ✅ Transform categories to only return names
+        $products->getCollection()->transform(function ($product) {
+            $product->categories = $product->categories->pluck('category_name');
+            return $product;
+        });
 
         return response()->json([
             'products' => $products,
@@ -120,6 +123,12 @@ class ProductController extends Controller
             ->inStock()
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+
+        // Only show category names
+        $products->getCollection()->transform(function ($product) {
+            $product->categories = $product->categories->pluck('category_name');
+            return $product;
+        });
 
         return response()->json([
             'products' => $products
@@ -145,6 +154,11 @@ class ProductController extends Controller
             ->search($query)
             ->paginate(20);
 
+        $products->getCollection()->transform(function ($product) {
+            $product->categories = $product->categories->pluck('category_name');
+            return $product;
+        });
+
         return response()->json([
             'query' => $query,
             'products' => $products
@@ -169,14 +183,21 @@ class ProductController extends Controller
             ], 404);
         }
 
+        $product->categories = $product->categories->pluck('category_name');
+
         $relatedProducts = Product::with(['images', 'categories'])
             ->active()
             ->inStock()
             ->whereHas('categories', function (Builder $q) use ($product) {
                 $q->whereIn('categories.id', $product->categories->pluck('id'));
             })
-            ->where('id', '!=', $product->id)
+            ->where('product_id', '!=', $product->product_id)
             ->paginate(6);
+
+        $relatedProducts->getCollection()->transform(function ($related) {
+            $related->categories = $related->categories->pluck('category_name');
+            return $related;
+        });
 
         return response()->json([
             'product' => $product,
@@ -185,12 +206,15 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * Available filters for frontend
+     */
     private function getAvailableFilters()
     {
         return [
             'categories' => Category::active()
                 ->whereHas('products')
-                ->select('id', 'name', 'slug')
+                ->select('id', 'category_name', 'slug')
                 ->get(),
             'brands' => Product::active()
                 ->distinct()
@@ -205,6 +229,9 @@ class ProductController extends Controller
         ];
     }
 
+    /**
+     * Extract available attributes from product variants
+     */
     private function getProductAttributes(Product $product)
     {
         $attributes = [];

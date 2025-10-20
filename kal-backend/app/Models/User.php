@@ -154,6 +154,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Product::class, 'wishlists');
     }
 
+     public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
+
     /**
      * Cart Helper Methods
      */

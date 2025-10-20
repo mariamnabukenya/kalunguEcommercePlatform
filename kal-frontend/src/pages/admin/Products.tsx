@@ -1,15 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Search, 
-  Filter,
-  MoreVertical,
-  Package
-} from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Search, Filter, Package } from 'lucide-react';
 import { apiService } from '../../lib/api';
 import { Product } from '../../types';
 import Button from '../../components/Button';
@@ -31,35 +22,29 @@ const AdminProducts: React.FC = () => {
   const { data: productsData, isLoading } = useQuery(
     ['admin-products', currentPage, searchTerm],
     () => apiService.getAdminProducts({ page: currentPage, search: searchTerm }),
-    {
-      keepPreviousData: true,
-    }
+    { keepPreviousData: true }
   );
 
   const deleteProductMutation = useMutation(
-    (id: number) => apiService.deleteProduct(id),
+    (product_id: number) => apiService.deleteProduct(product_id),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('admin-products');
         toast.success('Product deleted successfully');
       },
-      onError: () => {
-        toast.error('Failed to delete product');
-      },
+      onError: () => toast.error('Failed to delete product'),
     }
   );
 
   const bulkDeleteMutation = useMutation(
-    (ids: number[]) => apiService.bulkDeleteProducts(ids),
+    (product_ids: number[]) => apiService.bulkDeleteProducts(product_ids),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('admin-products');
         setSelectedProducts([]);
         toast.success('Products deleted successfully');
       },
-      onError: () => {
-        toast.error('Failed to delete products');
-      },
+      onError: () => toast.error('Failed to delete products'),
     }
   );
 
@@ -73,9 +58,9 @@ const AdminProducts: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteProduct = (id: number) => {
+  const handleDeleteProduct = (product_id: number) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
-      deleteProductMutation.mutate(id);
+      deleteProductMutation.mutate(product_id);
     }
   };
 
@@ -86,19 +71,19 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  const handleSelectProduct = (id: number) => {
-    setSelectedProducts(prev => 
-      prev.includes(id) 
-        ? prev.filter(productId => productId !== id)
-        : [...prev, id]
+  const handleSelectProduct = (product_id: number) => {
+    setSelectedProducts((prev) =>
+      prev.includes(product_id)
+        ? prev.filter((id) => id !== product_id)
+        : [...prev, product_id]
     );
   };
 
   const handleSelectAll = () => {
-    if (selectedProducts.length === productsData?.products.length) {
+    if (selectedProducts.length === productsData?.products?.length) {
       setSelectedProducts([]);
     } else {
-      setSelectedProducts(productsData?.products.map(p => p.id) || []);
+      setSelectedProducts(productsData?.products?.map((p) => p.product_id) || []);
     }
   };
 
@@ -116,6 +101,8 @@ const AdminProducts: React.FC = () => {
     );
   }
 
+  const products = productsData?.products || [];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -131,7 +118,7 @@ const AdminProducts: React.FC = () => {
           </Button>
         </div>
 
-        {/* Filters and Search */}
+        {/* Search & Filters */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
@@ -148,7 +135,11 @@ const AdminProducts: React.FC = () => {
                 Filters
               </Button>
               {selectedProducts.length > 0 && (
-                <Button variant="outline" onClick={handleBulkDelete} className="text-red-600">
+                <Button
+                  variant="outline"
+                  onClick={handleBulkDelete}
+                  className="text-red-600"
+                >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete ({selectedProducts.length})
                 </Button>
@@ -166,7 +157,10 @@ const AdminProducts: React.FC = () => {
                   <th className="px-6 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={selectedProducts.length === productsData?.products.length && productsData?.products.length > 0}
+                      checked={
+                        selectedProducts.length === products.length &&
+                        products.length > 0
+                      }
                       onChange={handleSelectAll}
                       className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                     />
@@ -175,7 +169,7 @@ const AdminProducts: React.FC = () => {
                     Product
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
+                    Categories
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Price
@@ -191,85 +185,113 @@ const AdminProducts: React.FC = () => {
                   </th>
                 </tr>
               </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
-                {productsData?.products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedProducts.includes(product.id)}
-                        onChange={() => handleSelectProduct(product.id)}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={product.images?.[0]?.image_url || '/placeholder-product.jpg'}
-                          alt={product.name}
-                          className="w-10 h-10 object-cover rounded"
+                {products.map((product) => {
+                  const categoryNames = product.categories?.length
+                    ? product.categories.map((c) => c.name).join(', ')
+                    : 'N/A';
+
+                  return (
+                    <tr key={product.product_id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.includes(product.product_id)}
+                          onChange={() => handleSelectProduct(product.product_id)}
+                          className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                         />
-                        <div>
-                          <p className="font-medium text-gray-900">{product.name}</p>
-                          <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={
+                              product.images?.[0]?.image_url ||
+                              '/placeholder-product.jpg'
+                            }
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {product.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              SKU: {product.sku || 'N/A'}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {product.category?.name || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      ${product.current_price}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {product.stock_quantity || 0}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        product.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => window.open(`/products/${product.id}`, '_blank')}
-                          className="text-gray-400 hover:text-gray-600"
-                          title="View Product"
+                      </td>
+
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {categoryNames}
+                      </td>
+
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        ${product.current_price || product.price || 0}
+                      </td>
+
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {product.stock_quantity ?? 0}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            product.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
                         >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEditProduct(product)}
-                          className="text-gray-400 hover:text-blue-600"
-                          title="Edit Product"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="text-gray-400 hover:text-red-600"
-                          title="Delete Product"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {product.status === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              window.open(`/products/${product.product_id}`, '_blank')
+                            }
+                            className="text-gray-400 hover:text-gray-600"
+                            title="View Product"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditProduct(product)}
+                            className="text-gray-400 hover:text-blue-600"
+                            title="Edit Product"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product.product_id)}
+                            className="text-gray-400 hover:text-red-600"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          {/* Empty State */}
-          {productsData?.products.length === 0 && (
+          {/* Empty state */}
+          {products.length === 0 && (
             <div className="text-center py-12">
               <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-500 mb-6">Get started by adding your first product.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No products found
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Get started by adding your first product.
+              </p>
               <Button onClick={handleAddProduct}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Product

@@ -4,6 +4,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { WishlistProvider } from './contexts/WishlistContext';
 import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
@@ -20,9 +22,9 @@ import Addresses from './pages/Addresses';
 import Reviews from './pages/Reviews';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
-import ProtectedRoute from './components/ProtectedRoute';
+
+// Admin & SuperAdmin
 import AdminLayout from './pages/admin/AdminLayout';
-import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminProducts from './pages/admin/Products';
 import AdminOrders from './pages/admin/Orders';
@@ -32,6 +34,7 @@ import AdminReviews from './pages/admin/Reviews';
 import AdminAnalytics from './pages/admin/Analytics';
 import AdminSettings from './pages/admin/Settings';
 import SuperAdminDashboard from './pages/superadmin/Dashboard';
+import UserDashboard from './pages/dashboard';
 
 function App() {
   return (
@@ -42,130 +45,40 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/products/:id" element={<ProductDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              
-              {/* Protected Routes */}
-              <Route path="/cart" element={
-                <ProtectedRoute>
-                  <Cart />
-                </ProtectedRoute>
-              } />
-              <Route path="/checkout" element={
-                <ProtectedRoute>
-                  <Checkout />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/orders" element={
-                <ProtectedRoute>
-                  <Orders />
-                </ProtectedRoute>
-              } />
-              <Route path="/orders/:id" element={
-                <ProtectedRoute>
-                  <OrderDetail />
-                </ProtectedRoute>
-              } />
-              <Route path="/orders/success" element={
-                <ProtectedRoute>
-                  <OrderSuccess />
-                </ProtectedRoute>
-              } />
-              <Route path="/wishlist" element={
-                <ProtectedRoute>
-                  <Wishlist />
-                </ProtectedRoute>
-              } />
-              <Route path="/addresses" element={
-                <ProtectedRoute>
-                  <Addresses />
-                </ProtectedRoute>
-              } />
-              <Route path="/reviews" element={
-                <ProtectedRoute>
-                  <Reviews />
-                </ProtectedRoute>
-              } />
-              
-              {/* Public Routes */}
               <Route path="/contact" element={<Contact />} />
-              
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+
+              {/* User Dashboard */}
+              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['customer']}><UserDashboard /></ProtectedRoute>} />
+
+              {/* Customer Protected Routes */}
+              <Route path="/cart" element={<ProtectedRoute allowedRoles={['customer']}><Cart /></ProtectedRoute>} />
+              <Route path="/checkout" element={<ProtectedRoute allowedRoles={['customer']}><Checkout /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute allowedRoles={['customer']}><Profile /></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute allowedRoles={['customer']}><Orders /></ProtectedRoute>} />
+              <Route path="/orders/:id" element={<ProtectedRoute allowedRoles={['customer']}><OrderDetail /></ProtectedRoute>} />
+              <Route path="/orders/success" element={<ProtectedRoute allowedRoles={['customer']}><OrderSuccess /></ProtectedRoute>} />
+              <Route path="/wishlist" element={<ProtectedRoute allowedRoles={['customer']}><Wishlist /></ProtectedRoute>} />
+              <Route path="/addresses" element={<ProtectedRoute allowedRoles={['customer']}><Addresses /></ProtectedRoute>} />
+              <Route path="/reviews" element={<ProtectedRoute allowedRoles={['customer']}><Reviews /></ProtectedRoute>} />
+
               {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={
-                <ProtectedRoute requireRole="admin">
-                  <AdminLayout>
-                    <AdminDashboard />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/products" element={
-                <ProtectedRoute requireRole="admin">
-                  <AdminLayout>
-                    <AdminProducts />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/orders" element={
-                <ProtectedRoute requireRole="admin">
-                  <AdminLayout>
-                    <AdminOrders />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/users" element={
-                <ProtectedRoute requireRole="admin">
-                  <AdminLayout>
-                    <AdminUsers />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/categories" element={
-                <ProtectedRoute requireRole="admin">
-                  <AdminLayout>
-                    <AdminCategories />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/reviews" element={
-                <ProtectedRoute requireRole="admin">
-                  <AdminLayout>
-                    <AdminReviews />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/analytics" element={
-                <ProtectedRoute requireRole="admin">
-                  <AdminLayout>
-                    <AdminAnalytics />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/settings" element={
-                <ProtectedRoute requireRole="admin">
-                  <AdminLayout>
-                    <AdminSettings />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              
-              {/* Super Admin Routes */}
-              <Route path="/superadmin" element={
-                <ProtectedRoute requireRole="superadmin">
-                  <AdminLayout>
-                    <SuperAdminDashboard />
-                  </AdminLayout>
-                </ProtectedRoute>
-              } />
-              
-              {/* 404 Route */}
+              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/products" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminProducts /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminOrders /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminCategories /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/reviews" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminReviews /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminAnalytics /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
+
+              {/* SuperAdmin */}
+              <Route path="/superadmin/dashboard" element={<ProtectedRoute allowedRoles={['super_admin']}><AdminLayout><SuperAdminDashboard /></AdminLayout></ProtectedRoute>} />
+
+              {/* 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

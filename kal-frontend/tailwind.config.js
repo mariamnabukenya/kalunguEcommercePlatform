@@ -7,12 +7,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ✅ Added this so `border-border` works
+        // ✅ ShadCN style vars
         border: "hsl(var(--border))",
-        background: 'hsl(var(--background))',
-    foreground: 'hsl(var(--foreground))',
-    ring: 'hsl(var(--ring))',
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        ring: "hsl(var(--ring))",
 
+        // ✅ Brand colors (banana fibre palette)
+        brand: {
+          beige: "#F5EFE4",      // natural beige
+          cream: "#FAFAF7",      // soft cream
+          brown: "#7B4D2A",      // warm earthy brown
+          terracotta: "#E07B39", // CTA accent
+          green: "#14532d",      // forest green (primary)
+          olive: "#6FAE75",      // olive green
+          sage: "#A8B8A5",       // muted sage
+          blush: "#E6B7B8",      // dusty rose / blush pink
+          slate: "#708090",      // slate blue
+          charcoal: "#333333",   // deep charcoal for text
+        },
+
+        // ✅ Other palettes you already had
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',

@@ -1,37 +1,25 @@
-import React, { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+// src/components/ProtectedRoute.tsx
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
-  requireRole?: 'admin' | 'superadmin';
+  children: React.ReactNode;
+  allowedRoles: string[]; // ✅ declare it here
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireRole }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const location = useLocation();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  if (isLoading) return <div>Loading...</div>;
 
-  if (!isAuthenticated) {
-    // Redirect to login page with return url
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  // Check role-based access
-  if (requireRole && user) {
-    if (requireRole === 'superadmin' && user.role !== 'superadmin') {
-      return <Navigate to="/" replace />;
-    }
-    if (requireRole === 'admin' && !['admin', 'superadmin'].includes(user.role)) {
-      return <Navigate to="/" replace />;
-    }
+  if (!allowedRoles.includes(user?.role || '')) {
+    // Redirect to correct dashboard if role mismatch
+    if (user?.role === 'super_admin') return <Navigate to="/superadmin/dashboard" replace />;
+    if (user?.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

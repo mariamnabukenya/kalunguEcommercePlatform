@@ -9,13 +9,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('wishlists', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
+    $table->id();
+    $table->foreignId('user_id')->constrained()->onDelete('cascade');
+    $table->unsignedBigInteger('product_id'); // match type
+    $table->foreign('product_id')
+          ->references('product_id') // not 'id'
+          ->on('products')
+          ->onDelete('cascade');
+    $table->timestamps();
 
-            $table->unique(['user_id', 'product_id']); // Prevent duplicates
-        });
+    $table->unique(['user_id', 'product_id']); // Prevent duplicates
+});
     }
 
     public function down(): void

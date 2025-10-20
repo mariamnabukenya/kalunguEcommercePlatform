@@ -9,23 +9,28 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('reviews', function (Blueprint $table) {
-            $table->id();
+    $table->id();
 
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('order_id')->nullable()->constrained()->nullOnDelete();
+    $table->unsignedBigInteger('user_id');
+    $table->unsignedBigInteger('product_id');
+    $table->unsignedBigInteger('order_id')->nullable();
 
-            $table->unsignedTinyInteger('rating'); // 1-5
-            $table->string('title')->nullable();
-            $table->text('comment')->nullable();
+    $table->unsignedTinyInteger('rating'); // 1-5
+    $table->string('title')->nullable();
+    $table->text('comment')->nullable();
 
-            $table->boolean('is_verified_purchase')->default(false);
-            $table->boolean('is_approved')->default(false);
+    $table->boolean('is_verified_purchase')->default(false);
+    $table->boolean('is_approved')->default(false);
 
-            $table->json('helpful_votes')->nullable();
+    $table->json('helpful_votes')->nullable();
 
-            $table->timestamps();
-        });
+    $table->timestamps();
+
+    // Foreign keys
+    $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+    $table->foreign('product_id')->references('product_id')->on('products')->onDelete('cascade');
+    $table->foreign('order_id')->references('id')->on('orders')->nullOnDelete();
+});
     }
 
     public function down(): void

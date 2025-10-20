@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\CartItemController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController; // Your token-based auth controller
 
 /*
@@ -81,10 +82,17 @@ Route::middleware('auth:sanctum')->group(function () {
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
 
     // Products
-    Route::apiResource('products', ProductController::class);
+    //Route::apiResource('products', ProductController::class);
+    Route::get('/stats', [AdminController::class, 'stats']);
+    Route::get('/products', [AdminController::class, 'index']); 
+    Route::get('/products/{id}', [AdminController::class, 'show']);
+    Route::post('/products', [AdminController::class, 'store']);
+    Route::put('/products/{id}', [AdminController::class, 'update']);
+    Route::delete('/products/{id}', [AdminController::class, 'destroy']);
+    Route::post('/products/bulk-delete', [AdminController::class, 'bulkDelete']);
 
     // Orders
     Route::get('orders', [OrderController::class, 'index']); 

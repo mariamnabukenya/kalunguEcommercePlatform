@@ -12,36 +12,31 @@ class CategorySeeder extends Seeder
     {
         DB::table('categories')->insert([
             [
-                'name' => 'Electronics',
-                'description' => 'Electronics products',
+                'category_name' => 'Electronics',
                 'slug' => Str::slug('Electronics'),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Fashion',
-                'description' => 'Clothing, shoes, and accessories',
+                'category_name' => 'Fashion',
                 'slug' => Str::slug('Fashion'),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Home & Kitchen',
-                'description' => 'Appliances, furniture, and kitchenware',
+                'category_name' => 'Home & Kitchen',
                 'slug' => Str::slug('Home & Kitchen'),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Sports',
-                'description' => 'Sporting goods and fitness equipment',
+                'category_name' => 'Sports',
                 'slug' => Str::slug('Sports'),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Books',
-                'description' => 'Educational and leisure books',
+                'category_name' => 'Books',
                 'slug' => Str::slug('Books'),
                 'created_at' => now(),
                 'updated_at' => now(),

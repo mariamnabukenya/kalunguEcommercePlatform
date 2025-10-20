@@ -16,14 +16,15 @@ export interface ProductVariant {
 }
 
 export interface Product {
-  id: number;
+  product_id: number;
   name: string;
   description: string;
   price: string;
   sale_price?: string;
   stock_quantity: number;
+  image?: string;
   featured: boolean;
-  categories: { id: number; name: string; slug: string }[];
+ category_name?: string;
   variants: ProductVariant[];
 }
 

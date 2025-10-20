@@ -1,18 +1,24 @@
-import React from 'react';
+import React from "react";
 
 interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
+  className?: string;
 }
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = 'md' }) => {
-  const dimensions = {
-    sm: 'w-6 h-6 border-b-2',
-    md: 'w-12 h-12 border-b-4',
-    lg: 'w-32 h-32 border-b-4',
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  size = "md",
+  className,
+}) => {
+  const dimensions: Record<typeof size, string> = {
+    sm: "w-4 h-4 border-2",
+    md: "w-6 h-6 border-2",
+    lg: "w-10 h-10 border-4",
   };
 
   return (
-    <div className={`animate-spin rounded-full border-gray-300 ${dimensions[size]} border-t-primary-600`}></div>
+    <div
+      className={`animate-spin rounded-full border-brand-brown/30 border-t-brand-green ${dimensions[size]} ${className}`}
+    />
   );
 };
 

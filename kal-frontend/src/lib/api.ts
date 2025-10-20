@@ -88,55 +88,69 @@ class ApiService {
   }
 
   // Product endpoints
-  // ...existing code...
-async getProducts(filters?: ProductFilters): Promise<{
-  products: Product[];
-  pagination: {
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-    from: number;
-    to: number;
-  };
-  filters: any;
-}> {
-  const response = await this.api.get('/products', {
-    params: filters,
-  });
+ // Get all products with optional filters
+async getProducts(filters?: ProductFilters) {
+  const response = await this.api.get('/products', { params: filters });
+  // Map products to ensure product_id is used
+  if (response.data?.products) {
+    response.data.products = response.data.products.map((p: any) => ({
+      ...p,
+      id: p.product_id, // map product_id to id for frontend consistency
+      categories: p.category_names || [], // map category_names
+    }));
+  }
   return response.data;
 }
-// ...existing code...
 
-  async getProduct(id: number): Promise<Product> {
-    const response: AxiosResponse<Product> = await this.api.get(`/products/${id}`);
-    return response.data;
-  }
+// Get single product by product_id
+async getProduct(product_id: number): Promise<Product> {
+  const response: AxiosResponse<Product> = await this.api.get(`/products/${product_id}`);
+  const product = response.data;
+  return {
+    ...product,
+    id: product.product_id,
+    categories: product.category_names || [],
+  };
+}
 
-  async getFeaturedProducts(): Promise<Product[]> {
+// Get featured products
+async getFeaturedProducts(): Promise<Product[]> {
   try {
     const response: AxiosResponse<any> = await this.api.get('/products/featured');
+    let products: any[] = [];
 
-    // Normalize response to always return an array
     if (Array.isArray(response.data)) {
-      return response.data;
-    } else if (response.data && Array.isArray(response.data.products)) {
-      return response.data.products;
-    } else {
-      return [];
+      products = response.data;
+    } else if (response.data?.products) {
+      products = response.data.products;
     }
-  } catch (error) {
+
+    // Map product_id and categories
+    return products.map((p) => ({
+      ...p,
+      id: p.product_id,
+      categories: p.category_names || [],
+    }));
+  } catch {
     toast.error('Failed to fetch featured products.');
     return [];
   }
 }
 
-  async searchProducts(query: string): Promise<Product[]> {
-    const response: AxiosResponse<Product[]> = await this.api.get('/products/search', {
-      params: { q: query },
-    });
-    return response.data;
-  }
+// Search products
+async searchProducts(query: string): Promise<Product[]> {
+  const response: AxiosResponse<Product[]> = await this.api.get('/products/search', {
+    params: { q: query },
+  });
+
+  // Map product_id and categories
+  return response.data.map((p: any) => ({
+    ...p,
+    id: p.product_id,
+    categories: p.category_names || [],
+  }));
+}
+
 
   // Cart endpoints
   async getCart(): Promise<{ items: CartItem[]; totals: any }> {
@@ -270,7 +284,65 @@ async getProducts(filters?: ProductFilters): Promise<{
   async markReviewHelpful(id: number): Promise<void> {
     await this.api.post(`/reviews/${id}/helpful`);
   }
+
+  // Admin-specific endpoints
+
+async getAdminDashboardStats(): Promise<any> {
+  const response: AxiosResponse<any> = await this.api.get('/admin/stats');
+  return response.data;
 }
+
+// Get all products (with pagination + search)
+// Get all products (with pagination + search)
+async getAdminProducts(params?: { page?: number; search?: string; per_page?: number }) {
+  const response = await this.api.get('/admin/products', { params });
+  return response.data;
+}
+
+// Get single product by product_id
+async getAdminProduct(product_id: number) {
+  const response = await this.api.get(`/admin/products/${product_id}`);
+  return response.data;
+}
+
+// Create a new product
+async createProduct(data: {
+  name: string;
+  price: number;
+  description?: string;
+  image?: string;
+  categories: string[]; // ✅ must be array
+}) {
+  const response = await this.api.post('/admin/products', data);
+  return response.data;
+}
+
+// Update a product by product_id
+async updateProduct(product_id: number, data: {
+  name?: string;
+  price?: number;
+  description?: string;
+  image?: string;
+  categories?: string[]; // ✅ must be array
+}) {
+  const response = await this.api.put(`/admin/products/${product_id}`, data);
+  return response.data;
+}
+
+// Delete a single product by product_id
+async deleteProduct(product_id: number) {
+  const response = await this.api.delete(`/admin/products/${product_id}`);
+  return response.data;
+}
+
+// Bulk delete products
+async bulkDeleteProducts(product_ids: number[]) {
+  const response = await this.api.post('/admin/products/bulk-delete', { ids: product_ids });
+  return response.data;
+}
+
+}
+
 
 export const apiService = new ApiService();
 export default apiService;

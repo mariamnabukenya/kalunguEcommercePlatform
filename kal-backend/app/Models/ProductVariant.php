@@ -21,6 +21,7 @@ class ProductVariant extends Model
         'attributes',
         'image',
         'weight',
+        'product_variant_id',
     ];
 
     protected $casts = [
@@ -35,11 +36,6 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    public function images(): HasMany
-    {
-        return $this->hasMany(ProductImage::class);
     }
 
     public function cartItems(): HasMany

@@ -18,6 +18,10 @@ class Product extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'product_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
+
     protected $fillable = [
         'name',
         'slug',
@@ -30,15 +34,15 @@ class Product extends Model
         'manage_stock',
         'in_stock',
         'status',
-        'category',
         'attributes',
         'weight',
         'dimensions',
         'featured',
-        'brand',
         'meta_data',
         'average_rating',
         'review_count',
+        'product_id',
+        'image',
     ];
 
     protected $casts = [
@@ -56,34 +60,26 @@ class Product extends Model
     ];
 
     /**
-     * Categories relation
+     * Categories relation (Many-to-Many)
      */
-    public function categories()
+    public function categories(): BelongsToMany
     {
-        return $this->belongsToMany(Category::class, 'product_categories')
-                    ->withTimestamps(); // optional: keeps track of pivot timestamps
+        return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id');
     }
 
     /**
      * Variants relation
      */
-    public function variants()
-{
-    return $this->hasMany(ProductVariant::class);
-}
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
 
     public function activeVariants(): HasMany
     {
         return $this->variants()->where('in_stock', true);
     }
 
-    /**
-     * Images relation
-     */
-    public function images(): HasMany
-    {
-        return $this->hasMany(ProductImage::class);
-    }
 
     public function primaryImage()
     {
@@ -177,6 +173,14 @@ class Product extends Model
         }
 
         return round((($this->price - $this->sale_price) / $this->price) * 100);
+    }
+
+    /**
+     * Computed attribute for compatibility with frontend (single category)
+     */
+    public function getCategoryAttribute()
+    {
+        return $this->categories->first();
     }
 
     /**

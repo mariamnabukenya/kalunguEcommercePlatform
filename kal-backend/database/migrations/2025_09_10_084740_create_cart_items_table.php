@@ -9,16 +9,32 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cart_items', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('cart_item_id'); // Custom primary key for consistency
 
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_variant_id')->nullable()->constrained()->onDelete('set null');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('product_variant_id')->nullable();
 
             $table->unsignedInteger('quantity')->default(1);
             $table->decimal('price', 10, 2);
 
             $table->timestamps();
+
+            // Foreign key definitions (explicit to match custom PKs)
+            $table->foreign('user_id')
+                  ->references('id')
+                  ->on('users')
+                  ->onDelete('cascade');
+
+            $table->foreign('product_id')
+                  ->references('product_id')
+                  ->on('products')
+                  ->onDelete('cascade');
+
+            $table->foreign('product_variant_id')
+                  ->references('product_variant_id')
+                  ->on('product_variants')
+                  ->nullOnDelete(); // set null if variant deleted
         });
     }
 

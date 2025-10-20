@@ -31,48 +31,39 @@ export interface AuthResponse {
 
 // Product Types
 export interface Product {
-  id: number;
+  product_id: number;
   name: string;
   slug: string;
   description: string;
   short_description?: string;
-  sku: string;
+  sku?: string;
   price: number;
-  sale_price?: number;
+  sale_price?: number | null;
   stock_quantity: number;
   manage_stock: boolean;
   in_stock: boolean;
-  status: 'active' | 'inactive';
-  category: string;
-  attributes?: Record<string, any>;
+  status: string;
   weight?: number;
+  image?: string;
   dimensions?: string;
   featured: boolean;
-  brand?: string;
-  meta_data?: Record<string, any>;
   average_rating: number;
   review_count: number;
-  current_price: number;
-  on_sale: boolean;
-  discount_percentage: number;
-  images?: ProductImage[];
-  variants?: ProductVariant[];
-  categories?: Category[];
-  created_at: string;
-  updated_at: string;
-}
+  created_at?: string;
+  updated_at?: string;
 
-export interface ProductImage {
-  id: number;
-  product_id: number;
-  image_url: string;
-  alt_text?: string;
-  is_primary: boolean;
-  sort_order: number;
+  // relationships
+  categories: Category[];
+  variants: ProductVariant[];
+
+  // computed fields
+  current_price?: number;
+  on_sale?: boolean;
+  discount_percentage?: number;
 }
 
 export interface ProductVariant {
-  id: number;
+  product_variant_id: number;
   product_id: number;
   sku: string;
   name: string;
@@ -83,14 +74,12 @@ export interface ProductVariant {
   attributes: Record<string, any>;
   current_price: number;
   on_sale: boolean;
+  image?: string;
 }
 
 export interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  image?: string;
+  category_id: number;
+  category_name: string;
   parent_id?: number;
   sort_order: number;
   is_active: boolean;
